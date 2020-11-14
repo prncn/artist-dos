@@ -1,5 +1,5 @@
 const api_key = '74276898ee7faad0825b302a0abe5f07' 
-const method = 'http://ws.audioscrobbler.com/2.0/?'
+const method = 'https://ws.audioscrobbler.com/2.0/?'
 
 async function fetch_similars(artist) {
     try {
