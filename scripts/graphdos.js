@@ -16,11 +16,20 @@ async function fetch_similars(artist) {
     }
 }
 
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+}
+
 async function get_names(artist) {
     let names = [];
     await fetch_similars(artist)
     .then(resp => resp.forEach(item => {
-        names.push(item.name)
+        if(item.name.includes(artist.capitalize())){
+            console.log("duplicate");
+        }
+        else{
+            names.push(item.name)
+        }
     }))
     return names;
 }
