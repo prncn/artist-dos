@@ -1,9 +1,13 @@
-const api_key = '74276898ee7faad0825b302a0abe5f07' 
-const method = 'https://ws.audioscrobbler.com/2.0/?'
+const found_dom = document.getElementById('found-artists');
 
 async function fetch_similars(artist) {
+    const api_key = '74276898ee7faad0825b302a0abe5f07' 
+    const main_url = 'https://ws.audioscrobbler.com/2.0/?'
+    const limit = 10
+    const autocorrect = 1;
+
     try {
-        let data = await fetch(method + `method=artist.getsimilar&artist=${artist}&api_key=${api_key}&format=json`)
+        let data = await fetch(`${main_url}method=artist.getsimilar&limit=${limit}&artist=${artist}&api_key=${api_key}&autocorrect=${autocorrect}&format=json`)
         .then(resp => resp.json())
         .then(resp => resp.similarartists.artist);
         return data;
@@ -12,28 +16,22 @@ async function fetch_similars(artist) {
     }
 }
 
-async function log_similar(artist) {
-    let found = [];
-    fetch_similars(artist).then(data => {
-        data.slice(0, 5).forEach(artist => {
-            console.log(artist.name)
-            found.push(artist.name);
-            document.getElementById('found-artists').insertAdjacentHTML('beforeend', `${artist.name}<br>`);
-        });
-        console.log(found);
-        return found;
-    });
+async function get_names(artist) {
+    let names = [];
+    await fetch_similars(artist)
+    .then(resp => resp.forEach(item => {
+        names.push(item.name)
+    }))
+    return names;
 }
 
 document.getElementById('search-btn').onclick = () => {
-    let key = document.getElementById('artist-key').value;
-    let found_dom = document.getElementById('found-artists');
-    /*
+    let artist_key = document.getElementById('artist-key').value;
+    document.getElementById('artist-key').value = '';
     found_dom.innerHTML = '';
-    log_similar(key).forEach(artist => {
-        found_dom.insertAdjacentHTML('beforeend', `<li>${artist}<li>`)
-    });
-    */
-   document.getElementById('found-artists').innerHTML = '';
-   log_similar(key);
+    get_names(artist_key).then(names => {
+        names.forEach(name => {
+            found_dom.insertAdjacentHTML('beforeend', `<li>${name}</li>`);
+        });
+    })
 }

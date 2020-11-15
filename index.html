@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/view.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <title>Artists' Seperation</title>
 </head>
 <body>
     <div class="container-form">
-        <form>
-            <input type="text" id="artist-key">
+        <div style="width: 100px; height: 100px;"></div>
+        <form onsubmit="return false" method="POST">
+            <input type="text" id="artist-key" autofocus="on" spellcheck="false">
+            <input type="submit" id="search-btn" value="search">
         </form>
-        <button id="search-btn">search</button>
     </div>
     <div class="results">
         <ul id="found-artists">

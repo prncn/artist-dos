@@ -1,0 +1,15 @@
+*, ::before, ::after {
+    box-sizing: border-box;
+    list-style: none;
+}
+
+body, html {
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
