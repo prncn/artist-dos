@@ -5,7 +5,7 @@ let origin_name;    // corrected name of artist
 /**
  * Fetches LastFM API's artist.getSimilar method
  * and returns artist objects.
- * @param {*} artist 
+ * @param {string} artist    search box input
  */
 async function fetch_similars(artist) {
     const api_key = '74276898ee7faad0825b302a0abe5f07' 
@@ -26,7 +26,7 @@ async function fetch_similars(artist) {
 
 /**
  * Filter fetch_similars object list to artists' names.
- * @param {*} artist 
+ * @param {string} artist   search box input
  */
 async function get_names(artist) {
     let names = [];
@@ -56,5 +56,40 @@ async function render_artists() {
         found_dom.insertAdjacentHTML('beforeend', `<li>${name}</li>`);
     }
 }
-
 document.getElementById('search-btn').onclick = render_artists;
+
+/**
+ * Checks if there is an intersection between neighbor nodes of node A neighbors of B.
+ * Bi-directional BFS graph search.
+ * @param {string} artist_a     first artist
+ * @param {string} artist_b     second artist
+ */
+async function bidirect_search(artist_a, artist_b) {
+    let nodes_a = [artist_a];
+    let nodes_b = [artist_b];
+    const max_distance = 15;
+    let distance = 1;
+
+    while(distance < max_distance){
+        for (node of nodes_a){
+            entry = await get_names(node);
+            nodes_a = entry.concat(nodes_a);
+        }
+        if(nodes_a.some(n => nodes_b.includes(n))){ // Check if intersection between node B and node A neighbors
+            return distance;
+        } 
+        
+        distance += 1;
+        
+        for (node of nodes_b){
+            entry = await get_names(node);
+            nodes_b = entry.concat(nodes_b);
+        }
+        if(nodes_b.some(n => nodes_a.includes(n))){ // Check if intersection between node A and node B neighbors
+            return distance;
+        }
+        
+        distance += 1;
+    }
+}
+bidirect_search("Drake", "Rich Brian").then(console.log); // Should return distance 3
