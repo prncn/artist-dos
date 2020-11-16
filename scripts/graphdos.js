@@ -1,6 +1,12 @@
-const found_dom = document.getElementById('found-artists');
-let origin_name;
+const found_dom = document.getElementById('found-artists'); // HTML list of displayed artists
+const search_dom = document.getElementById('artist-key'); // HTML search box
+let origin_name;    // corrected name of artist
 
+/**
+ * Fetches LastFM API's artist.getSimilar method
+ * and returns artist objects.
+ * @param {*} artist 
+ */
 async function fetch_similars(artist) {
     const api_key = '74276898ee7faad0825b302a0abe5f07' 
     const main_url = 'https://ws.audioscrobbler.com/2.0/?'
@@ -18,28 +24,37 @@ async function fetch_similars(artist) {
     }
 }
 
+/**
+ * Filter fetch_similars object list to artists' names.
+ * @param {*} artist 
+ */
 async function get_names(artist) {
     let names = [];
-    await fetch_similars(artist)
-    .then(resp => resp.forEach(item => {
+    let data = await fetch_similars(artist);
+    for(item of data){
         if(item.name.includes(origin_name)){
-            console.log("duplicate at " + item.name);
+            console.log(`duplicate at ${item.name} (from ${origin_name})`);
         }
         else{
             names.push(item.name)
         }
-    }))
+    }
     return names;
 }
 
-document.getElementById('search-btn').onclick = () => {
-    let artist_key = document.getElementById('artist-key').value;
-    document.getElementById('artist-key').value = '';
+/**
+ * Callback funcion when search button is clicked.
+ */
+async function render_artists() {
+    artist_key = search_dom.value;
+    search_dom.value = '';
     found_dom.innerHTML = '';
-    get_names(artist_key).then(names => {
-        found_dom.insertAdjacentHTML('beforeend', `<strong>${origin_name}:<strong>`);
-        names.forEach(name => {
-            found_dom.insertAdjacentHTML('beforeend', `<li>${name}</li>`);
-        });
-    })
+    
+    let names = await get_names(artist_key);
+    found_dom.insertAdjacentHTML('beforeend', `<strong>${origin_name}:<strong>`);
+    for(name of names){
+        found_dom.insertAdjacentHTML('beforeend', `<li>${name}</li>`);
+    }
 }
+
+document.getElementById('search-btn').onclick = render_artists;
