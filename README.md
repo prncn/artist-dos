@@ -5,5 +5,18 @@ The user inputs two names of music artists and the app searches the shortest pat
 
 
 Example:  
-*Input* - Drake, Men I Trust  
-*Output* - Drake -> MadeinTYO -> Rich Brian -> Joji -> Benee -> Gus Dapperton -> Men I Trust 
+*Input* -  
+Drake, Men I Trust  
+*Output* -  
+Drake  
+Bryson Tiller  
+Brent Faiyaz  
+Daniel Caesar  
+Rex Orange County  
+boy pablo  
+The Marías  
+Bernache  
+Men I Trust  
+  
+*DEMO*:  
+https://prncn.github.io/artist-dos/
