@@ -11,16 +11,19 @@
     <div class="container-form">
         <div style="width: 100px; height: 100px;"></div>
         <form onsubmit="return false" method="POST">
-            <input type="text" id="artist-key" autofocus="on" spellcheck="false">
+            <input type="text" id="artist-keya" autofocus="on" spellcheck="false" required>
+            <input type="text" id="artist-keyb" spellcheck="false" required>
             <input type="submit" id="search-btn" value="search">
         </form>
     </div>
-    <div class="results">
+    <div id="results">
+        <div id="results-loader"></div>
         <ul id="found-artists">
          <!-- JS INJECTION -->
         </ul>
     </div>
     
     <script type="text/javascript" src="scripts/graphdos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.5.3/lottie.js"></script>
 </body>
 </html>

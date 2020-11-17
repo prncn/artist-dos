@@ -1,6 +1,7 @@
 const found_dom = document.getElementById('found-artists'); // HTML list of displayed artists
-const search_dom = document.getElementById('artist-key'); // HTML search box
-
+const search_doma = document.getElementById('artist-keya'); // HTML search box
+const search_domb = document.getElementById('artist-keyb');
+const result_dom = document.getElementById('results-loader');
 
 /**
  * Object describing artist data from LastFM API call.
@@ -17,6 +18,15 @@ class artistData {
             names.push(item.name);
         }
         return names;
+    }
+
+    async get_matches() {
+        let match_rates = [];
+        let items = await this.list;
+        for(let item of items){
+            match_rates.push(item.match);
+        }
+        return match_rates;
     }
 };
 
@@ -46,19 +56,35 @@ async function fetch_similars(artist) {
 
 /**
  * Callback funcion when search button is clicked.
+ * Execute path functions and render results to HTML.
  */
 async function render_artists() {
-    artist_key = search_dom.value;
-    search_dom.value = '';
+    let artistkey_a = search_doma.value;
+    let artistkey_b = search_domb.value;
     found_dom.innerHTML = '';
-    let artist_data = await fetch_similars(artist_key);
-    let names = await artist_data.get_names();
+    result_dom.classList.add('logo-bm');
+    bodymovin.loadAnimation({
+        container: document.getElementsByClassName('logo-bm')[0],
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: 'assets/loading.json'
+    });
+    
+    artistkey_a = await fetch_similars(artistkey_a);
+    artistkey_a = artistkey_a.origin;
+    artistkey_b = await fetch_similars(artistkey_b);
+    artistkey_b = artistkey_b.origin;
 
-    found_dom.insertAdjacentHTML('beforeend', `<strong>${artist_data.origin}:<strong>`);
-    for(let name of names){
+    const [seperation_path, match_rate] = await bidirect_search(artistkey_a, artistkey_b);
+    console.log(seperation_path);
+    result_dom.classList.remove('logo-bm');
+    result_dom.removeChild(result_dom.getElementsByTagName('svg')[0]);
+    found_dom.innerHTML = '';
+    for(let name of seperation_path){
         found_dom.insertAdjacentHTML('beforeend', `<li>${name}</li>`);
     }
-    await bidirect_search(artist_data.origin, "Rich Brian");
+    found_dom.insertAdjacentHTML('beforeend', `<br><strong>Match Rate: ${(match_rate*100).toFixed(1)}%</strong>`);
 }
 document.getElementById('search-btn').onclick = render_artists;
 
@@ -72,7 +98,9 @@ document.getElementById('search-btn').onclick = render_artists;
 async function bidirect_search(artist_a, artist_b) {
     let nodes_a = [artist_a];
     let nodes_b = [artist_b];
-    const max_distance = 8;
+    let matches_a = ["1"];
+    let matches_b = ["1"];
+    const max_distance = 15;
     let distance = 0;
     let visited_a = new Set();
     let visited_b = new Set();
@@ -81,46 +109,54 @@ async function bidirect_search(artist_a, artist_b) {
 
 
     while(distance < max_distance){
-        // console.log(nodes_a, nodes_b);
-        if(distance == max_distance - 1)
-            console.log(`Over ${max_distance - 1} degrees.`)
+        if(distance === max_distance - 1)
+            console.log(`Over ${max_distance - 1} degrees.`);
 
-        for (let node of nodes_a){
-            if(visited_a.has(node))
-                continue;
-            data = await fetch_similars(node);
-            entry = await data.get_names();
-            nodes_a = nodes_a.concat(entry);
-            preds_a[nodes_a.indexOf(node)] = nodes_a.length;
-            visited_a.add(node);
-        }
-        if(nodes_a.some(n => nodes_b.includes(n))){ // Check if intersection between node B and node A neighbors
+        [nodes_a, preds_a, visited_a, matches_a] = await update_bfs(nodes_a, preds_a, visited_a, matches_a);
+        if(nodes_a.some(n => nodes_b.includes(n))){         // Check if intersection between node B and node A neighbors
             let inters = nodes_a.filter(n => nodes_b.includes(n))[0];
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
-            console.log(path);
-            // console.log(distance);
-            return distance;
+            let match_rate = get_matchrate(path, nodes_a, matches_a);
+
+            return [path, match_rate];
         } 
         distance += 1;
         
-        for (let node of nodes_b){
-            if(visited_b.has(node))
-                continue;
-            data = await fetch_similars(node);
-            entry = await data.get_names();
-            nodes_b = nodes_b.concat(entry);
-            preds_b[nodes_b.indexOf(node)] = nodes_b.length;
-            visited_b.add(node);
-        }
-        if(nodes_b.some(n => nodes_a.includes(n))){ // Check if intersection between node A and node B neighbors
+        [nodes_b, preds_b, visited_b, matches_b] = await update_bfs(nodes_b, preds_b, visited_b, matches_b);
+        if(nodes_b.some(n => nodes_a.includes(n))){         // Check if intersection between node A and node B neighbors
             let inters = nodes_b.filter(n => nodes_a.includes(n))[0];
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
-            console.log(path);
-            // console.log(distance);
-            return distance;
+            let match_rate = get_matchrate(path, nodes_b, matches_b);
+            
+            return [path, match_rate];
         }     
         distance += 1;
     }
+}
+
+
+/**
+ * Increase size of BFS search zone.
+ * @param {array of strings} nodes      list of total BFS area 
+ * @param {array of nums} preds         list of predecessors
+ * @param {set of strings} visited      nodes that have already been discovered
+ * @param {array of nums} match_rates   match rates corresponding to nodes list
+ */
+async function update_bfs(nodes, preds, visited, matches){
+    for (let node of nodes){
+        found_dom.innerHTML = node;
+        console.log(node);
+        if(visited.has(node))
+            continue;
+        let data = await fetch_similars(node);
+        let entry = await data.get_names();
+        let match_entry = await data.get_matches();
+        nodes = nodes.concat(entry);
+        matches = matches.concat(match_entry);
+        preds[nodes.indexOf(node)] = nodes.length;
+        visited.add(node);
+    }
+    return [nodes, preds, visited, matches];
 }
 
 
@@ -130,17 +166,14 @@ async function bidirect_search(artist_a, artist_b) {
  * @param {array of strings} preds  list of predecessors
  * @param {string} child            child node of which the parent will be searched
  */
-function get_parent(nodes, preds, child){
-    let inters_index = nodes.indexOf(child);
-    if(inters_index === -1){
-        console.log(`ERROR child ${child} not found in nodes`);
-        return false;
-    }
-    let parent_range = preds.find(x => x >= inters_index);
+function get_parent(nodes, preds, child) {
+    let child_index = nodes.indexOf(child);
+    if(child_index === -1) 
+    throw `Index of child ${child} does not exist.`
+    let parent_range = preds.find(x => x >= child_index);
     let parent_index = preds.indexOf(parent_range);
     let parent = nodes[parent_index];
-
-    console.log(child, inters_index, parent_range, preds);
+    
     
     return parent;
 }
@@ -156,26 +189,47 @@ function get_parent(nodes, preds, child){
  * @param {string} artist_a             source node
  * @param {string} artist_b             destination node
  */
-function trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b){
+function trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b) {
     let path = [];
     let left_path = [];
     let source_inters = inters;
-
+    
     while(inters !== artist_a){
         let temp = get_parent(nodes_a, preds_a, inters);
-        if(!temp) return false;
+        if(!temp)
+        throw `Cannot find parent of ${inters}.`
         inters = temp;
         left_path.push(inters);
     }
     path = path.concat(left_path.reverse());
-
+    
     inters = source_inters;
     path.push(inters);
     while(inters !== artist_b){
         let temp = get_parent(nodes_b, preds_b, inters);
-        if(!temp) return false;
+        if(!temp)
+        throw `Cannot find parent of ${inters}.`
         inters = temp;
         path.push(inters);
     }
     return path;
+}
+
+
+/**
+ * Calculate smallest match rate based on list of all match rates.
+ * @param {array of artistData} path    path from source to destination
+ * @param {array of strings} nodes      list of predecessors
+ * @param {array of nums} matches       match rates corresponding to nodes list
+ */
+function get_matchrate(path, nodes, matches){
+    let match_list = [];
+    for(let item of path){
+        let child_index = nodes.indexOf(item);
+        let match_rate = matches[child_index];
+        if(match_rate === undefined)
+            continue;
+        match_list.push(parseFloat(match_rate, 10));
+    }
+    return Math.min(...match_list);
 }
