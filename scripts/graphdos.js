@@ -72,7 +72,7 @@ document.getElementById('search-btn').onclick = render_artists;
 async function bidirect_search(artist_a, artist_b) {
     let nodes_a = [artist_a];
     let nodes_b = [artist_b];
-    const max_distance = 15;
+    const max_distance = 8;
     let distance = 0;
     let visited_a = new Set();
     let visited_b = new Set();
@@ -81,23 +81,23 @@ async function bidirect_search(artist_a, artist_b) {
 
 
     while(distance < max_distance){
+        // console.log(nodes_a, nodes_b);
         if(distance == max_distance - 1)
             console.log(`Over ${max_distance - 1} degrees.`)
 
         for (let node of nodes_a){
             if(visited_a.has(node))
                 continue;
-            preds_a[nodes_a.indexOf(node)] = nodes_a.length;
             data = await fetch_similars(node);
             entry = await data.get_names();
             nodes_a = nodes_a.concat(entry);
+            preds_a[nodes_a.indexOf(node)] = nodes_a.length;
             visited_a.add(node);
         }
         if(nodes_a.some(n => nodes_b.includes(n))){ // Check if intersection between node B and node A neighbors
             let inters = nodes_a.filter(n => nodes_b.includes(n))[0];
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
             console.log(path);
-            // console.log(inters);
             // console.log(distance);
             return distance;
         } 
@@ -106,10 +106,10 @@ async function bidirect_search(artist_a, artist_b) {
         for (let node of nodes_b){
             if(visited_b.has(node))
                 continue;
-            preds_b[nodes_b.indexOf(node)] = nodes_b.length;
             data = await fetch_similars(node);
             entry = await data.get_names();
             nodes_b = nodes_b.concat(entry);
+            preds_b[nodes_b.indexOf(node)] = nodes_b.length;
             visited_b.add(node);
         }
         if(nodes_b.some(n => nodes_a.includes(n))){ // Check if intersection between node A and node B neighbors
@@ -132,9 +132,15 @@ async function bidirect_search(artist_a, artist_b) {
  */
 function get_parent(nodes, preds, child){
     let inters_index = nodes.indexOf(child);
-    let parent_range = preds.find(x => x > inters_index);
-    let parent_index = preds.indexOf(parent_range) - 1;
+    if(inters_index === -1){
+        console.log(`ERROR child ${child} not found in nodes`);
+        return false;
+    }
+    let parent_range = preds.find(x => x >= inters_index);
+    let parent_index = preds.indexOf(parent_range);
     let parent = nodes[parent_index];
+
+    console.log(child, inters_index, parent_range, preds);
     
     return parent;
 }
@@ -157,6 +163,7 @@ function trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist
 
     while(inters !== artist_a){
         let temp = get_parent(nodes_a, preds_a, inters);
+        if(!temp) return false;
         inters = temp;
         left_path.push(inters);
     }
@@ -166,6 +173,7 @@ function trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist
     path.push(inters);
     while(inters !== artist_b){
         let temp = get_parent(nodes_b, preds_b, inters);
+        if(!temp) return false;
         inters = temp;
         path.push(inters);
     }
