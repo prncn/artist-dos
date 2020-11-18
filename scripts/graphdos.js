@@ -38,7 +38,7 @@ class artistData {
 async function fetch_similars(artist) {
     const api_key = '74276898ee7faad0825b302a0abe5f07' 
     const main_url = 'https://ws.audioscrobbler.com/2.0/?'
-    const limit = 10;
+    const limit = 15;
     const autocorrect = 1;
     artist_data = new artistData;
 
@@ -101,7 +101,7 @@ async function bidirect_search(artist_a, artist_b) {
     let matches_a = ["1"];
     let matches_b = ["1"];
     const max_distance = 15;
-    let distance = 0;
+    let distance = 1;
     let visited_a = new Set();
     let visited_b = new Set();
     let preds_a = [];
@@ -113,10 +113,11 @@ async function bidirect_search(artist_a, artist_b) {
             console.log(`Over ${max_distance - 1} degrees.`);
 
         [nodes_a, preds_a, visited_a, matches_a] = await update_bfs(nodes_a, preds_a, visited_a, matches_a);
+        // console.log(visited_a, visited_b);
         if(nodes_a.some(n => nodes_b.includes(n))){         // Check if intersection between node B and node A neighbors
             let inters = nodes_a.filter(n => nodes_b.includes(n))[0];
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
-            let match_rate = get_matchrate(path, nodes_a, matches_a);
+            let match_rate = get_matchrate(path, nodes_a, matches_a) / distance;
 
             return [path, match_rate];
         } 
@@ -126,7 +127,7 @@ async function bidirect_search(artist_a, artist_b) {
         if(nodes_b.some(n => nodes_a.includes(n))){         // Check if intersection between node A and node B neighbors
             let inters = nodes_b.filter(n => nodes_a.includes(n))[0];
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
-            let match_rate = get_matchrate(path, nodes_b, matches_b);
+            let match_rate = get_matchrate(path, nodes_b, matches_b) / distance;
             
             return [path, match_rate];
         }     
@@ -145,7 +146,7 @@ async function bidirect_search(artist_a, artist_b) {
 async function update_bfs(nodes, preds, visited, matches){
     for (let node of nodes){
         found_dom.innerHTML = node;
-        console.log(node);
+        // console.log(node);
         if(visited.has(node))
             continue;
         let data = await fetch_similars(node);
@@ -169,11 +170,14 @@ async function update_bfs(nodes, preds, visited, matches){
 function get_parent(nodes, preds, child) {
     let child_index = nodes.indexOf(child);
     if(child_index === -1) 
-    throw `Index of child ${child} does not exist.`
-    let parent_range = preds.find(x => x >= child_index);
+        throw `Index of child ${child} does not exist.`
+    let parent_range = preds.find(x => x > child_index);
     let parent_index = preds.indexOf(parent_range);
     let parent = nodes[parent_index];
     
+    // console.log(nodes, preds);
+    // console.log(child_index, parent_range);
+    // console.log(parent_index, parent);
     
     return parent;
 }
@@ -231,5 +235,6 @@ function get_matchrate(path, nodes, matches){
             continue;
         match_list.push(parseFloat(match_rate, 10));
     }
+    // console.log(match_list);
     return Math.min(...match_list);
 }
