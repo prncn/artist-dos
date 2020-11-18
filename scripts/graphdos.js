@@ -2,25 +2,34 @@ const found_dom = document.getElementById('found-artists'); // HTML list of disp
 const search_doma = document.getElementById('artist-keya'); // HTML search box
 const search_domb = document.getElementById('artist-keyb');
 const result_dom = document.getElementById('results-loader');
+let entry_counter = 0;
 
-/**
- * Object describing artist data from LastFM API call.
- */
-class artistData {
+async function load_cache(){
+    let response = await fetch('scripts/data_cache.json');
+    cache_json = await response.json();
+    return cache_json;
+}
+
+load_cache().then(resp => {
+    
     /**
-     * Getter for raw artists' names. Used for rendering.
-     * @param {string} artist   search box input
+     * Object describing artist data from LastFM API call.
      */
-    async get_names() {
-        let names = [];
-        let items = await this.list;
-        for(let item of items){
-            names.push(item.name);
+    class artistData {
+        constructor(obj){
+            Object.assign(this, obj)
         }
-        return names;
-    }
-
-    async get_matches() {
+        
+        async get_names() {
+            let names = [];
+            let items = await this.list;
+            for(let item of items){
+                names.push(item.name);
+            }
+            return names;
+        }
+        
+        async get_matches() {
         let match_rates = [];
         let items = await this.list;
         for(let item of items){
@@ -29,6 +38,20 @@ class artistData {
         return match_rates;
     }
 };
+
+let DATA_CACHE = resp;
+for(let i=0; i<DATA_CACHE.length; i++){
+    DATA_CACHE[i] = new artistData(DATA_CACHE[i])
+}
+
+function is_cached(node){
+    for(let i=0; i<DATA_CACHE.length; i++){
+        if(DATA_CACHE[i].origin === node)
+            return i;
+    }
+    return -1;
+}
+
 
 /**
  * Fetches LastFM API's artist.getSimilar method
@@ -41,12 +64,16 @@ async function fetch_similars(artist) {
     const limit = 15;
     const autocorrect = 1;
     artist_data = new artistData;
-
+    
     try {
         let data = await fetch(`${main_url}method=artist.getsimilar&limit=${limit}&artist=${artist}&api_key=${api_key}&autocorrect=${autocorrect}&format=json`)
         data = await data.json();
         artist_data.origin = await data.similarartists["@attr"].artist;
-        artist_data.list = await data.similarartists.artist.filter(x => !x.name.includes("&"));
+        let similars_data = await data.similarartists.artist.filter(x => !x.name.includes("&"));
+        artist_data.list = [];
+        for(let item of similars_data){
+            artist_data.list.push({"name": item.name, "match": item.match});
+        }
         return artist_data;
     } catch (error) {
         console.log(error);
@@ -76,8 +103,11 @@ async function render_artists() {
     artistkey_b = await fetch_similars(artistkey_b);
     artistkey_b = artistkey_b.origin;
 
+    const t0 = performance.now();
     const [seperation_path, match_rate] = await bidirect_search(artistkey_a, artistkey_b);
-    console.log(seperation_path);
+    const t1 = performance.now();
+
+    // console.log(seperation_path);
     result_dom.classList.remove('logo-bm');
     result_dom.removeChild(result_dom.getElementsByTagName('svg')[0]);
     found_dom.innerHTML = '';
@@ -85,6 +115,20 @@ async function render_artists() {
         found_dom.insertAdjacentHTML('beforeend', `<li>${name}</li>`);
     }
     found_dom.insertAdjacentHTML('beforeend', `<br><strong>Match Rate: ${(match_rate*100).toFixed(1)}%</strong>`);
+    found_dom.insertAdjacentHTML('beforeend', `<br>${((t1 - t0)/1000).toFixed(2)} seconds. ${entry_counter} entries`);
+
+    let cache_string = [];
+    for(let item of DATA_CACHE){
+        // console.log(item)
+        // console.log(JSON.stringify(item));
+        cache_string.push(JSON.stringify(item));
+    }
+    // console.log(DATA_CACHE, cache_string)
+    // let a = document.createElement('a');
+    // a.href = "data:application/octet-stream,"+encodeURIComponent(cache_string);
+    // a.download = 'abc.txt';
+    // a.click();
+    console.log(DATA_CACHE);
 }
 document.getElementById('search-btn').onclick = render_artists;
 
@@ -96,6 +140,7 @@ document.getElementById('search-btn').onclick = render_artists;
  * @param {string} artist_b     second artist
  */
 async function bidirect_search(artist_a, artist_b) {
+    entry_counter = 0;
     let nodes_a = [artist_a];
     let nodes_b = [artist_b];
     let matches_a = ["1"];
@@ -135,7 +180,6 @@ async function bidirect_search(artist_a, artist_b) {
     }
 }
 
-
 /**
  * Increase size of BFS search zone.
  * @param {array of strings} nodes      list of total BFS area 
@@ -145,11 +189,20 @@ async function bidirect_search(artist_a, artist_b) {
  */
 async function update_bfs(nodes, preds, visited, matches){
     for (let node of nodes){
+        entry_counter += 1;
         found_dom.innerHTML = node;
         // console.log(node);
         if(visited.has(node))
             continue;
-        let data = await fetch_similars(node);
+
+        let cached = is_cached(node); 
+        let data;
+        if(cached !== -1){
+            data = DATA_CACHE[cached];
+        } else {
+            data = await fetch_similars(node);
+            DATA_CACHE.push(data);
+        }
         let entry = await data.get_names();
         let match_entry = await data.get_matches();
         nodes = nodes.concat(entry);
@@ -238,3 +291,5 @@ function get_matchrate(path, nodes, matches){
     // console.log(match_list);
     return Math.min(...match_list);
 }
+
+})
