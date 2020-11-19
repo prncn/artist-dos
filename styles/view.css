@@ -1,13 +1,19 @@
+:root {
+    --prime-color: #87ecd0;
+    --prime-color-alt: #4bad9d;
+    --prime-color-fade: rgba(135, 236, 208, 0.5);
+}
+
 *, ::before, ::after {
     box-sizing: border-box;
     list-style: none;
     font-family: monospace;
-    font-size: large;
 }
 
 body, html {
     margin: 0;
     height: 100%;
+    overflow: hidden;
 }
 
 body {
@@ -24,4 +30,50 @@ body {
 #results-loader {
     width: 50px;
     height: 50px;
+}
+
+#graph-container {
+    position: absolute;
+    z-index: -1;
+    width: 500px;
+    height: 500px;
+}
+
+.rendered-node {
+    position: absolute;
+    color: gray;
+    font-size: small;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0}
+    to {opacity: 1}
+}  
+
+.btn, .btn-primary, .btn-primary:not(:disabled):not(.disabled):active, .btn:focus {
+    background-color: var(--prime-color);
+    border: none;
+    transition: all 0.3s ease 0s;
+
+    -webkit-box-shadow: 0px 7px 15px 0px var(--prime-color-fade);
+    -moz-box-shadow: 0px 7px 15px 0px var(--prime-color-fade);
+    box-shadow: 0px 7px 15px 0px var(--prime-color-fade);
+}
+
+.form-control:focus {
+    border: 1px solid;
+    box-shadow: none;
+}
+
+.btn:hover,  .btn:active .btn-primary:active {
+    background-color: var(--prime-color-alt);
+}
+
+.btn:focus {
+    box-shadow: 0px 0px 0px px var(--prime-color-fade);
+}
+
+svg {
+    overflow: visible;
 }

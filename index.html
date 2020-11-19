@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles/view.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles/view.css">
     <title>Artists' Seperation</title>
 </head>
 <body>
-    <div class="container-form">
-        <div style="width: 100px; height: 100px;"></div>
-        <form onsubmit="return false" method="POST">
-            <input type="text" id="artist-keya" autofocus="on" spellcheck="false" required>
-            <input type="text" id="artist-keyb" spellcheck="false" required>
-            <input type="submit" id="search-btn" value="search">
-        </form>
-    </div>
+    <div id="graph-container"></div>
+    <form class="form-inline" onsubmit="return false" method="POST">
+        <div class="form-group mx-sm-2">
+          <input type="text" class="form-control" id="artist-keya" placeholder="Erykah Badu" spellcheck="false" autofocus="on" required>
+        </div>
+        
+        <div class="form-group mx-sm-2">
+            <input type="text" class="form-control" id="artist-keyb" placeholder="Drake" spellcheck="false" required>
+        </div>
+        <button type="submit" class="btn btn-primary mx-sm-2" id="search-btn">Search</button>
+    </form>
     <div id="results">
         <div id="results-loader"></div>
         <ul id="found-artists">
