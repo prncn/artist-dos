@@ -95,6 +95,9 @@ async function fetch_similars(artist) {
  * Execute path functions and render results to HTML.
  */
 async function render_artists() {
+    currpred = 0;
+    prevpred = 0;
+    parent = 0;
     pos.clear();
     let artistkey_a = search_doma.value;
     let artistkey_b = search_domb.value;
@@ -161,8 +164,7 @@ function download_cache(){
 const graph_container = document.getElementById("graph-container");
 var fullWidth = graph_container.clientWidth;
 var fullHeight = graph_container.clientHeight; 
-// let xpos = (fullWidth / 2);
-// let ypos = (fullHeight / 2);
+
 let xpos = 500;
 let ypos = 500;
 let pos = new Set();
@@ -190,11 +192,7 @@ function render_randomnode(node){
     elem.style.left = xpos + "px";
     elem.style.top = ypos + "px";
 
-    // fullWidth += 10;
-    // fullHeight += 10;
     graph_container.appendChild(elem);
-    // graph_container.style.width = fullWidth + "px";
-    // graph_container.style.height = fullHeight + "px";
 }
 
 
@@ -214,14 +212,34 @@ function render_markpath(seperation_path){
                 // nodes[i].style.backgroundColor = "white";
                 if(j > 0)
                 graph_container.insertAdjacentHTML('beforeend', 
-                `<svg style="position: absolute;" width="${window.innerWidth}"height="${window.innerHeight}">
-                <line x1="${nodes[i].style.left}" y1="${nodes[i].style.top}" x2="${parentx}" y2="${parenty}" stroke="red"/>
-                </svg>`)
+                    `<svg style="position: absolute;" width="${window.innerWidth}"height="${window.innerHeight}">
+                    <line x1="${nodes[i].style.left}" y1="${nodes[i].style.top}" x2="${parentx}" y2="${parenty}" stroke="red"/>
+                    </svg>`)
                 parentx = nodes[i].style.left;
                 parenty = nodes[i].style.top;
             }
         }
     }
+}
+
+
+/**
+ * Render edges between non seperation path nodes. (Unused, looks weird)
+ * @param {Array of Int} preds 
+ */
+function render_edges(preds){
+    currpred = preds[0];
+    if(currpred !== prevpred)
+        parent++;
+    let nodes = document.getElementsByClassName('rendered-node');
+    if(nodes.length < 2)
+        return;
+    let i = nodes.length - 1;
+    graph_container.insertAdjacentHTML('beforeend', 
+        `<svg style="position: absolute;" width="${window.innerWidth}"height="${window.innerHeight}">
+        <line x1="${nodes[i].style.left}" y1="${nodes[i].style.top}" x2="${nodes[parent].style.left}" y2="${nodes[parent].style.top}" stroke="gray"/>
+        </svg>`)
+    prevpred = currpred;
 }
 
 
@@ -291,6 +309,7 @@ async function update_bfs(nodes, preds, visited, matches){
         if(visited.has(node))
             continue;
         render_randomnode(node);
+        // render_edges(preds);
 
         let cached = is_cached(node); 
         let data;
@@ -307,6 +326,7 @@ async function update_bfs(nodes, preds, visited, matches){
         preds[nodes.indexOf(node)] = nodes.length;
         visited.add(node);
     }
+    // console.log(preds);
     return [nodes, preds, visited, matches];
 }
 
