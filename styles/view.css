@@ -2,6 +2,7 @@
     --prime-color: #87ecd0;
     --prime-color-alt: #4bad9d;
     --prime-color-fade: rgba(135, 236, 208, 0.5);
+    --back-color: #fffefa
 }
 
 *, ::before, ::after {
@@ -20,7 +21,15 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-wrap: wrap;
+    background-color: var(--back-color);
 }
+
+input[type="text"], textarea {
+
+    background-color : var(--back-color); 
+  
+  }
 
 #results {
     width: 15rem;
@@ -38,6 +47,25 @@ body {
     width: 500px;
     height: 500px;
 }
+
+.content {
+    display: contents;
+}
+
+@media (max-width: 576px) {
+    .form-container {
+        width: 225px;
+    }
+    
+}
+
+@media (max-width: 992px) {
+    .content {
+        display: block;
+    }
+}
+
+
 
 .rendered-node {
     position: absolute;

@@ -58,6 +58,9 @@ function is_cached(node) {
     return -1;
 }
 
+search_doma.placeholder = DATA_CACHE[Math.floor(Math.random() * DATA_CACHE.length)].origin;
+search_domb.placeholder = DATA_CACHE[Math.floor(Math.random() * DATA_CACHE.length)].origin;
+
 
 /**
  * Fetches LastFM API's artist.getSimilar method
@@ -177,7 +180,7 @@ function render_randomnode(node){
     if(pos.has(xpos)){
         // console.log("detected");
         while(pos.has(xpos)){
-            xpos = xpos + 50;
+            xpos = xpos + 100;
             ypos = rsgn() * (Math.round(Math.random() * fullHeight)* 0.25 + ypos * 0.75);
         }
     } else {
@@ -250,6 +253,7 @@ async function bidirect_search(artist_a, artist_b) {
         // console.log(visited_a, visited_b);
         if(nodes_a.some(n => nodes_b.includes(n))){         // Check if intersection between node B and node A neighbors
             let inters = nodes_a.filter(n => nodes_b.includes(n))[0];
+            render_randomnode(inters);
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
             let match_rate = get_matchrate(path, nodes_a, matches_a) / distance;
 
@@ -258,16 +262,18 @@ async function bidirect_search(artist_a, artist_b) {
         distance += 1;
         
         [nodes_b, preds_b, visited_b, matches_b] = await update_bfs(nodes_b, preds_b, visited_b, matches_b);
+        distance += 1;
         if(nodes_b.some(n => nodes_a.includes(n))){         // Check if intersection between node A and node B neighbors
             let inters = nodes_b.filter(n => nodes_a.includes(n))[0];
+            render_randomnode(inters);
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
             let match_rate = get_matchrate(path, nodes_b, matches_b) / distance;
             
             return [path, match_rate];
         }     
-        distance += 1;
     }
 }
+
 
 
 /**

@@ -8,24 +8,32 @@
     <title>Artists' Seperation</title>
 </head>
 <body>
-    <div id="graph-container"></div>
-    <form class="form-inline" onsubmit="return false" method="POST">
-        <div class="form-group mx-sm-2">
-          <input type="text" class="form-control" id="artist-keya" placeholder="Erykah Badu" spellcheck="false" autofocus="on" required>
+    <div class="content">
+        <div class="form-container">
+            <form class="form-inline" onsubmit="return false" method="POST">
+                <div class="form-group mx-sm-2">
+                    <input type="text" class="form-control" id="artist-keya" placeholder="Erykah Badu" spellcheck="false" autofocus="on" required>
+                </div>
+                
+                <div class="form-group mx-sm-2">
+                    <input type="text" class="form-control" id="artist-keyb" placeholder="Drake" spellcheck="false" required>
+                </div>
+                <button type="submit" class="btn btn-primary mx-sm-2" id="search-btn">Search</button>
+            </form>
         </div>
-        
-        <div class="form-group mx-sm-2">
-            <input type="text" class="form-control" id="artist-keyb" placeholder="Drake" spellcheck="false" required>
+        <div class="break"></div>
+        <div id="results">
+            <div id="results-loader"></div>
+            <ul id="found-artists">
+                <!-- JS INJECTION -->
+            </ul>
         </div>
-        <button type="submit" class="btn btn-primary mx-sm-2" id="search-btn">Search</button>
-    </form>
-    <div id="results">
-        <div id="results-loader"></div>
-        <ul id="found-artists">
-         <!-- JS INJECTION -->
-        </ul>
     </div>
     
+    <div id="graph-container"></div>
+    <footer style="position: fixed; bottom: 2rem;">
+        <a style="text-decoration: none; color: black;"href="https://github.com/prncn/artist-dos">prncn/github</a>
+    </footer>
     <script type="text/javascript" src="scripts/graphdos.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.5.3/lottie.js"></script>
 </body>
