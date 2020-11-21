@@ -95,9 +95,7 @@ async function fetch_similars(artist) {
  * Execute path functions and render results to HTML.
  */
 async function render_artists() {
-    currpred = 0;
-    prevpred = 0;
-    parent = 0;
+    
     pos.clear();
     let artistkey_a = search_doma.value;
     let artistkey_b = search_domb.value;
@@ -134,7 +132,7 @@ async function render_artists() {
     found_dom.insertAdjacentHTML('beforeend', `<br><strong>Match Rate: ${(match_rate*100).toFixed(1)}%</strong>`);
     found_dom.insertAdjacentHTML('beforeend', `<p style="color: var(--prime-color)">${((t1 - t0)/1000).toFixed(2)} seconds. ${entry_counter} entries</p>`);
     // document.getElementById("graph-container").innerHTML = '';
-    render_markpath(seperation_path);
+    render_seperationpath(seperation_path);
     document.getElementById('search-btn').classList.add('mx-sm-2');
 }
 document.getElementById('search-btn').onclick = render_artists;
@@ -158,21 +156,36 @@ function download_cache(){
 
 
 /**
- * Render artistData name to random position on HTML body.
+ * Return DOM of given node string (artist name), or null if it is not rendered.
  * @param {String} node 
  */
+function find_renderednode(node){
+    let nodes = document.getElementsByClassName('rendered-node');
+    for(let i=0; i<nodes.length; i++){
+        if(nodes[i].innerText === node){
+            return nodes[i];
+        }
+    }
+    return null;
+}
+
+
 const graph_container = document.getElementById("graph-container");
 var fullWidth = graph_container.clientWidth;
 var fullHeight = graph_container.clientHeight; 
-
 let xpos = 500;
 let ypos = 500;
 let pos = new Set();
-function render_randomnode(node){
-    var maxwidth = window.innerWidth;
-    var maxheight = window.innerHeight;
 
+/**
+ * Render artistData name to random position on HTML body.
+ * @param {String} node 
+ * @param {String} parent 
+ */
+function render_randomnode(node, parent){
+    let nodes = document.getElementsByClassName('rendered-node');
     const elem = document.createElement("div");
+    elem.id = nodes.length;
     elem.classList.add('rendered-node');
     elem.innerText = node;
     var rsgn = () => Math.round(Math.random()) ? 1 : -1;
@@ -180,66 +193,75 @@ function render_randomnode(node){
     ypos = Math.round(rsgn() * (Math.round(Math.random() * fullHeight)* 0.25 + ypos * 0.75));
 
     if(pos.has(xpos)){
-        // console.log("detected");
         while(pos.has(xpos)){
             xpos = xpos + 100;
             ypos = rsgn() * (Math.round(Math.random() * fullHeight)* 0.25 + ypos * 0.75);
         }
     } else {
-        // console.log("not detected");
         pos.add(xpos);
     }
+
     elem.style.left = xpos + "px";
     elem.style.top = ypos + "px";
-
     graph_container.appendChild(elem);
+
+    if(parent !== null){
+        let parent_elem = find_renderednode(parent);
+        if(parent_elem !== null){
+            render_edge(elem, parent_elem, "var(--gray-fade)");
+        }
+    }
+
+    return elem;
 }
 
+
+/**
+ * Render edge between two given nodes. 
+ * @param {DOM} nodea 
+ * @param {DOPM} nodeb 
+ * @param {String} color 
+ */
+function render_edge(nodea, nodeb, color){
+    graph_container.insertAdjacentHTML('beforeend', 
+        `<svg class="edge-svg" width="${window.innerWidth}"height="${window.innerHeight}">
+        <line x1="${nodea.style.left}" y1="${nodea.style.top}" x2="${nodeb.style.left}" y2="${nodeb.style.top}" stroke="${color}"/>
+        </svg>`)
+}
+
+document.getElementById('hide-edge-btn').onclick = () => {
+    const alledges = document.getElementsByClassName('edge-svg');
+    if(alledges.length === 0){
+        return;
+    }
+    if(alledges[0].classList.length > 1){
+        for(let i=0; i<alledges.length; i++){
+            alledges[i].classList.remove('hide-edges');
+        }
+    } else {
+        for(let i=0; i<alledges.length; i++){
+            alledges[i].classList.add('hide-edges');
+        }
+    }
+}
 
 /**
  * Highlight seperation path in render.
  * @param {Array of artistData} seperation_path path from source to destination
  */
-function render_markpath(seperation_path){
-    let nodes = document.getElementsByClassName('rendered-node');
-    let parentx = 0;
-    let parenty = 0;
-    for(let j=0; j<seperation_path.length; j++){
-        for(let i=0; i<nodes.length; i++){
-            if(nodes[i].innerText === seperation_path[j]){
-                nodes[i].style.zIndex = 5;
-                nodes[i].style.color = "red";
-                // nodes[i].style.backgroundColor = "white";
-                if(j > 0)
-                graph_container.insertAdjacentHTML('beforeend', 
-                    `<svg style="position: absolute;" width="${window.innerWidth}"height="${window.innerHeight}">
-                    <line x1="${nodes[i].style.left}" y1="${nodes[i].style.top}" x2="${parentx}" y2="${parenty}" stroke="red"/>
-                    </svg>`)
-                parentx = nodes[i].style.left;
-                parenty = nodes[i].style.top;
-            }
+function render_seperationpath(seperation_path){
+    let predegree;
+    for(let i=0; i<seperation_path.length; i++){
+        let degree = find_renderednode(seperation_path[i]);
+        if(degree === null){
+            degree = render_randomnode(seperation_path[i], null);
         }
+
+        degree.style.zIndex = 5;
+        degree.style.color = "red";
+        if(i > 0) render_edge(degree, predegree, "red");
+        predegree = degree;
     }
-}
-
-
-/**
- * Render edges between non seperation path nodes. (Unused, looks weird)
- * @param {Array of Int} preds 
- */
-function render_edges(preds){
-    currpred = preds[0];
-    if(currpred !== prevpred)
-        parent++;
-    let nodes = document.getElementsByClassName('rendered-node');
-    if(nodes.length < 2)
-        return;
-    let i = nodes.length - 1;
-    graph_container.insertAdjacentHTML('beforeend', 
-        `<svg style="position: absolute;" width="${window.innerWidth}"height="${window.innerHeight}">
-        <line x1="${nodes[i].style.left}" y1="${nodes[i].style.top}" x2="${nodes[parent].style.left}" y2="${nodes[parent].style.top}" stroke="gray"/>
-        </svg>`)
-    prevpred = currpred;
 }
 
 
@@ -268,10 +290,10 @@ async function bidirect_search(artist_a, artist_b) {
             console.log(`Over ${max_distance - 1} degrees.`);
 
         [nodes_a, preds_a, visited_a, matches_a] = await update_bfs(nodes_a, preds_a, visited_a, matches_a);
-        // console.log(visited_a, visited_b);
+        entry_counter += nodes_a.length;
         if(nodes_a.some(n => nodes_b.includes(n))){         // Check if intersection between node B and node A neighbors
             let inters = nodes_a.filter(n => nodes_b.includes(n))[0];
-            render_randomnode(inters);
+           
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
             let match_rate = get_matchrate(path, nodes_a, matches_a) / distance;
 
@@ -280,18 +302,18 @@ async function bidirect_search(artist_a, artist_b) {
         distance += 1;
         
         [nodes_b, preds_b, visited_b, matches_b] = await update_bfs(nodes_b, preds_b, visited_b, matches_b);
-        distance += 1;
+        entry_counter += nodes_b.length;
         if(nodes_b.some(n => nodes_a.includes(n))){         // Check if intersection between node A and node B neighbors
             let inters = nodes_b.filter(n => nodes_a.includes(n))[0];
-            render_randomnode(inters);
+            
             let path = trace_path(nodes_a, preds_a, nodes_b, preds_b, inters, artist_a, artist_b);
             let match_rate = get_matchrate(path, nodes_b, matches_b) / distance;
             
             return [path, match_rate];
         }     
+        distance += 1;
     }
 }
-
 
 
 /**
@@ -302,15 +324,11 @@ async function bidirect_search(artist_a, artist_b) {
  * @param {Array of Float} match_rates   match rates corresponding to nodes list
  */
 async function update_bfs(nodes, preds, visited, matches){
+    let n = 1;
     for (let node of nodes){
-        entry_counter += 1;
         found_dom.innerHTML = node;
-        // console.log(node);
-        if(visited.has(node))
-            continue;
-        render_randomnode(node);
-        // render_edges(preds);
-
+        if(visited.has(node)) continue;
+        
         let cached = is_cached(node); 
         let data;
         if(cached !== -1){
@@ -319,14 +337,35 @@ async function update_bfs(nodes, preds, visited, matches){
             data = await fetch_similars(node);
             DATA_CACHE.push(data);
         }
-        let entry = await data.get_names();
+        let adjacents = await data.get_names();
+
+        /**
+         * Edge rendering block
+         */
+        let node_doms = document.getElementsByClassName('rendered-node');
+        if(node_doms.length <= 200 || node_doms.length >= 200 + n){
+            if(node_doms.length >= 200 + n){
+                n *= 1.4;
+            }
+            render_randomnode(node, null);
+            for(let adjacent of adjacents){
+                let adj_dom = find_renderednode(adjacent);
+                if(adj_dom === null){
+                    render_randomnode(adjacent, node);
+                } else {
+                    let parent_dom = find_renderednode(node);
+                    render_edge(adj_dom, parent_dom,"var(--gray-fade)");
+                }
+            }
+        }        
+
         let match_entry = await data.get_matches();
-        nodes = nodes.concat(entry);
+        nodes = nodes.concat(adjacents);
         matches = matches.concat(match_entry);
         preds[nodes.indexOf(node)] = nodes.length;
         visited.add(node);
     }
-    // console.log(preds);
+    
     return [nodes, preds, visited, matches];
 }
 
@@ -344,10 +383,6 @@ function get_parent(nodes, preds, child) {
     let parent_range = preds.find(x => x > child_index);
     let parent_index = preds.indexOf(parent_range);
     let parent = nodes[parent_index];
-    
-    // console.log(nodes, preds);
-    // console.log(child_index, parent_range);
-    // console.log(parent_index, parent);
     
     return parent;
 }
@@ -405,7 +440,6 @@ function get_matchrate(path, nodes, matches) {
             continue;
         match_list.push(parseFloat(match_rate, 10));
     }
-    // console.log(match_list);
     return Math.min(...match_list);
 }
 
